@@ -14,7 +14,7 @@ const client = new Client({
     partials: [Partials.Message, Partials.Channel],
 });
 
-const SUPPORTED_TOOLS = ['claude', 'gemini', 'kilo', 'blackbox', 'codex'];
+const SUPPORTED_TOOLS = ['claude', 'gemini', 'kilo', 'blackbox', 'codex', 'qwen'];
 const DEFAULT_TOOL = process.env.DEFAULT_CLI_TOOL || 'claude';
 const TEMP_DIR = path.join(__dirname, '..', '..', 'tmp');
 
