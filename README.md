@@ -19,7 +19,8 @@ A Discord bot that uses installed CLI AI tools (`claude`, `gemini`, `kilo`, `bla
    cp .env.example .env
    ```
    * Set `DISCORD_BOT_TOKEN` to your bot's token.
-   * Set `DEFAULT_CLI_TOOL` to the tool you want to use by default (e.g., `claude`).
+   * Set `MINIMAX_API_KEY` to enable intelligent prompt routing using the MiniMax API.
+   * Set `DEFAULT_CLI_TOOL` to the fallback tool (e.g., `claude`).
    * Set `PORT` for the local web server used to host generated websites (default `3000`).
 
 ## Usage

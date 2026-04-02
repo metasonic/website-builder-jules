@@ -14,7 +14,7 @@ const client = new Client({
     partials: [Partials.Message, Partials.Channel],
 });
 
-const SUPPORTED_TOOLS = ['claude', 'gemini', 'kilo', 'blackbox', 'codex', 'qwen'];
+const { routeWithMinimax, SUPPORTED_TOOLS } = require('../core/router');
 const DEFAULT_TOOL = process.env.DEFAULT_CLI_TOOL || 'claude';
 const TEMP_DIR = path.join(__dirname, '..', '..', 'tmp');
 
@@ -23,20 +23,24 @@ if (!fs.existsSync(TEMP_DIR)) {
     fs.mkdirSync(TEMP_DIR, { recursive: true });
 }
 
-function parseMessage(content, botId) {
+async function parseMessage(content, botId) {
     // Remove the bot mention
     const cleanContent = content.replace(`<@${botId}>`, '').trim();
 
     // Check if the user specified a tool at the beginning
     const firstWord = cleanContent.split(' ')[0].toLowerCase();
 
-    let tool = DEFAULT_TOOL;
+    let tool = null;
     let prompt = cleanContent;
 
     if (SUPPORTED_TOOLS.includes(firstWord)) {
         tool = firstWord;
         // Remove the tool name from the prompt
         prompt = cleanContent.substring(firstWord.length).trim();
+    } else {
+        // If no explicit tool is given, use MiniMax to intelligently route it.
+        // We do this asynchronously.
+        tool = await routeWithMinimax(cleanContent);
     }
 
     return { tool, prompt };
@@ -75,10 +79,14 @@ client.on('messageCreate', async (message) => {
 
     const filePaths = [];
     try {
-        const { tool, prompt } = parseMessage(message.content, client.user.id);
+        // Since parsing now uses an async API call, we should await it
+        // We'll let the user know we're thinking first
+        const reply = await message.reply(`Thinking about how to handle this request...`);
 
-        // Let user know we are processing
-        const reply = await message.reply(`Processing request using \`${tool}\`...`);
+        const { tool, prompt } = await parseMessage(message.content, client.user.id);
+
+        // Update reply to show which tool was selected
+        await reply.edit(`Routing request to \`${tool}\`...`);
 
         // Handle attachments
         for (const [id, attachment] of message.attachments) {
