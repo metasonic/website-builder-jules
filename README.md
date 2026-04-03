@@ -22,6 +22,7 @@ A Discord bot that uses installed CLI AI tools (`claude`, `gemini`, `kilo`, `bla
    * Set `MINIMAX_API_KEY` to enable intelligent prompt routing using the MiniMax API.
    * Set `DEFAULT_CLI_TOOL` to the fallback tool (e.g., `claude`).
    * Set `PORT` for the local web server used to host generated websites (default `3000`).
+   * Set `CONCURRENCY_LIMIT` for the maximum number of simultaneous CLI executions (default `1`).
 
 ## Usage
 

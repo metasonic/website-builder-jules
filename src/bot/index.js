@@ -4,6 +4,7 @@ const fs = require('fs');
 const https = require('https');
 const { executeCliCommand } = require('../core/cliRunner');
 const { processCliOutput } = require('./responseHandler');
+const { TaskQueue } = require('./queue');
 
 const client = new Client({
     intents: [
@@ -16,7 +17,11 @@ const client = new Client({
 
 const { routeWithMinimax, SUPPORTED_TOOLS } = require('../core/router');
 const DEFAULT_TOOL = process.env.DEFAULT_CLI_TOOL || 'claude';
+const CONCURRENCY_LIMIT = parseInt(process.env.CONCURRENCY_LIMIT, 10) || 1;
 const TEMP_DIR = path.join(__dirname, '..', '..', 'tmp');
+
+// Initialize the global task queue
+const taskQueue = new TaskQueue(CONCURRENCY_LIMIT);
 
 // Ensure tmp dir exists
 if (!fs.existsSync(TEMP_DIR)) {
@@ -86,7 +91,7 @@ client.on('messageCreate', async (message) => {
         const { tool, prompt } = await parseMessage(message.content, client.user.id);
 
         // Update reply to show which tool was selected
-        await reply.edit(`Routing request to \`${tool}\`...`);
+        await reply.edit(`Routing request to \`${tool}\`... (Position in queue: ${taskQueue.getQueuePosition()})`);
 
         // Handle attachments
         for (const [id, attachment] of message.attachments) {
@@ -94,8 +99,11 @@ client.on('messageCreate', async (message) => {
             filePaths.push(filePath);
         }
 
-        // Execute CLI command
-        const cliOutput = await executeCliCommand(tool, prompt, filePaths);
+        // Enqueue the CLI execution
+        const cliOutput = await taskQueue.add(async () => {
+             await reply.edit(`Executing request using \`${tool}\`...`);
+             return executeCliCommand(tool, prompt, filePaths);
+        });
 
         // Process response (Host website or send text)
         await processCliOutput(message, reply, cliOutput);
